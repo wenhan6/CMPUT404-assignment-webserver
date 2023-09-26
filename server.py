@@ -1,5 +1,6 @@
 #  coding: utf-8 
 import socketserver
+import os
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 # 
@@ -31,8 +32,70 @@ class MyWebServer(socketserver.BaseRequestHandler):
     
     def handle(self):
         self.data = self.request.recv(1024).strip()
-        print ("Got a request of: %s\n" % self.data)
-        self.request.sendall(bytearray("OK",'utf-8'))
+        #print ("Got a request of: %s\n" % self.data)
+
+        STATUS_200 = "HTTP/1.1 200 OK\r\n"
+        STATUS_301 = "HTTP/1.1 301 Move Permanently\r\n"
+        STATUS_404 = "HTTP/1.1 404 Not Found\r\n"
+        STATUS_405 = "HTTP/1.1 405 Method Not Allowed\r\n"
+
+        requestDetails = self.data.decode('utf-8').split()
+        requestType = requestDetails[0]
+        requestPath = requestDetails[1]
+
+        #print(requestType)
+
+        # if method is not GET
+        if (requestType != "GET"):
+            self.request.sendall(bytearray(STATUS_405, 'utf-8'))
+            return
+        
+        # else it is a GET method
+        else:
+            # check if path ends with "/"
+            if (requestPath[-1] != "/") and ("." not in requestPath.split("/")):
+                newRequestPath = requestPath + "/"
+                self.request.sendall(bytearray(f"{STATUS_301}Location:{newRequestPath}\r\n", "utf-8"))
+                return
+            
+            # check if the directory is empty
+            dotCount = 0
+            for file in requestPath.split("/"):
+                if "." in file:
+                    dotCount += 1
+            if dotCount < 1:
+                requestPath += "index.html"
+            # add only files in www can be access
+            requestPath = "www" + requestPath
+            if requestPath[-1] == "/":
+                requestPath = requestPath[:-1]
+            
+            # check if file exist
+            if os.path.exists(requestPath):
+                contentType = ""
+                # check for css or html
+                if (requestPath.endswith(".html")):
+                    contentType = "Content-type: text/html\r\n\r\n"
+                elif (requestPath.endswith(".css")):
+                    contentType = "Content-type: text/css\r\n\r\n"
+                else:
+                    contentType = "application/octet-stream\r\n\r\n"
+                
+                # read file
+                f = open(requestPath, "r")
+                content = f.read()
+                f.close()
+
+                # send status code and content
+                self.request.sendall(bytearray(STATUS_200+contentType+content, "utf-8"))
+                return
+            # if not it is error 
+            else:
+                self.request.sendall(bytearray(STATUS_404,"utf-8"))
+                return
+
+        #print(requestDetails)
+        #self.request.sendall(bytearray("OK",'utf-8'))
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
