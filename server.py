@@ -52,8 +52,8 @@ class MyWebServer(socketserver.BaseRequestHandler):
         
         # else it is a GET method
         else:
-            # check if path ends with "/"
-            if (requestPath[-1] != "/") and ("." not in requestPath.split("/")):
+            # check if path ends with "/" and it is not a source file
+            if (requestPath[-1] != "/") and ("." not in requestPath.split("/")[-1]):
                 newRequestPath = requestPath + "/"
                 self.request.sendall(bytearray(f"{STATUS_301}Location:{newRequestPath}\r\n", "utf-8"))
                 return
