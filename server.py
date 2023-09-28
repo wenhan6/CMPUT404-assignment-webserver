@@ -43,7 +43,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         requestType = requestDetails[0]
         requestPath = requestDetails[1]
 
-        #print(requestType)
+        #print(requestPath)
 
         # if method is not GET
         if (requestType != "GET"):
@@ -60,16 +60,17 @@ class MyWebServer(socketserver.BaseRequestHandler):
             
             # check if the directory is empty
             dotCount = 0
-            for file in requestPath.split("/"):
+            for file in requestPath.split("/"):                
                 if "." in file:
                     dotCount += 1
             if dotCount < 1:
+                #print("executed")
                 requestPath += "index.html"
             # add only files in www can be access
-            requestPath = "www" + requestPath
+            requestPath = "./www" + requestPath
             if requestPath[-1] == "/":
                 requestPath = requestPath[:-1]
-            
+            #print(requestPath)
             # check if file exist
             if os.path.exists(requestPath):
                 contentType = ""
@@ -93,7 +94,6 @@ class MyWebServer(socketserver.BaseRequestHandler):
             else:
                 self.request.sendall(bytearray(STATUS_404,"utf-8"))
                 return
-
         #print(requestDetails)
         #self.request.sendall(bytearray("OK",'utf-8'))
 
